@@ -53,8 +53,10 @@ void setTriangles(std::ifstream &file) {
     triangles.resize(countTriangles);
     for (auto i = 0; i < countTriangles; i++) {
 		triangles[i].resize(3);
-		file >> triangles[i][0]; // Записываем ID материала
-		file >> triangles[i][0]; // Перезаписываем ID материала на ID вершины тетраэдра
+		// Записываем ID материала
+		file >> triangles[i][0];
+		// Перезаписываем ID материала на ID вершины треугольника
+		file >> triangles[i][0]; 
 		file >> triangles[i][1];
 		file >> triangles[i][2];
 	}
