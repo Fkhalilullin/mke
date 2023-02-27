@@ -25,6 +25,7 @@ double q = -108.0;
 double P1 = -1200, P2 = -2400; 
 // Расположение координат насосов
 double coord_x1 = 25.0, coord_y1 = 10.0, coord_x2 = 8.0, coord_y2 = 5.0;
+// Напор
 const double fi = 200.0;
 
 // Координаты узлов
@@ -74,6 +75,7 @@ void setLines(std::ifstream &file) {
 
 Matrix setCoordinatesForGlobalMatrix(Matrix C, Matrix D, Matrix K) {
     for (int k = 0; k < countTriangles; k++) {
+		// Координаты КЭ (первый столбец из 1)
         Matrix C(3,3);
         C.SetCoordinatesFE(k, triangles, points);
         // C.Show("Матрица C");
@@ -84,6 +86,7 @@ Matrix setCoordinatesForGlobalMatrix(Matrix C, Matrix D, Matrix K) {
         // inv_C.Show("Обратная матрица С");
 
         Matrix B(2,3);
+		// Хранит коэффициенты функции формы
         B.SetBMatrix(inv_C);
         // B.Show("Матрица B");
   
@@ -91,17 +94,18 @@ Matrix setCoordinatesForGlobalMatrix(Matrix C, Matrix D, Matrix K) {
         Matrix B_tr = B.Transpose();
         // B_tr.Show("Транспонированная матрица B");
         
-
+		// Умножение матриц B^T*D*B 
         Matrix BDB = B_tr.MultiplicationByMatrix(D.MultiplicationByMatrix(B));
 		BDB.MultiplicationByNumber(squareTriangles[k]);
         // BDB.Show("Матрица B^T*D*B");
 
+		// Переносим в глобальную матрицу K
 		for (int t = 0; t < 3; t++) {
 			for (int g = 0; g < 3; g++) {
 				int ind1, ind2;
 				ind1 = triangles[k][t];
 				ind2 = triangles[k][g];
-                K.SetElem(ind1 - 1,ind2 - 1, K.GetElem(ind1 - 1,ind2 - 1) + BDB.GetElem(t, g));
+                K.SetElem(ind1 - 1, ind2 - 1, K.GetElem(ind1 - 1, ind2 - 1) + BDB.GetElem(t, g));
 			}
 		}
 	}
@@ -177,8 +181,7 @@ int main() {
     std::vector<int> id_bc;
 	for (int k = 0; k < countLines; k++) {
         // ГУ 1 рода (задано значение fi)
-		if (lines[k][0] == 1 || lines[k][0] == 3)  
-		{
+		if (lines[k][0] == 1 || lines[k][0] == 3) {
 			int ind1 = lines[k][1];
 			int ind2 = lines[k][2];
 			Fi[ind1-1] = fi;
@@ -188,22 +191,20 @@ int main() {
 		}
 
         // ГУ 2 рода (задано q)
-		if (lines[k][0] == 5)  
-		{
+		if (lines[k][0] == 5) {
 			lineLength = getLength(lines, points, k);
-			for (int i = 1; i < 3; i++) // Перенос в глобальный вектор нагрузки F
-			{
+			// Перенос в глобальный вектор нагрузки F
+			for (int i = 1; i < 3; i++) {
 				int ind = lines[k][i]; 
 				F[ind - 1] += -(q * lineLength)/2.0;
 			}
 		}
 
-	  }
+	}
     auto id_boundary_condition = std::unique(id_bc.begin(), id_bc.end());
 	id_bc.erase(id_boundary_condition, id_bc.end());
 	Matrix C1(3,3);
-	for (int k = 0; k < countTriangles; k++) 
-	{
+	for (int k = 0; k < countTriangles; k++) {
 		//Проверяем принадлежит ли насос данному КЭ
 		//Получаем ID узлов для данного КЭ
 		int id1 = triangles[k][0], id2 = triangles[k][1], id3 = triangles[k][2];
@@ -262,7 +263,8 @@ int main() {
 			F[id3 - 1] += N[2] * P2 * square / 3.0;
 		}
 	}
-	//преобразование системы с учетом ГУ 1 рода
+
+	// Преобразование системы с учетом ГУ 1 рода
 	for (auto &i: id_bc) {
 		F[i] = K.GetElem(i,i) * Fi[i];
 

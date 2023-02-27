@@ -127,6 +127,7 @@ void Matrix::SetCoordinatesFE(
 					s++;
 				}
 				else {
+					// Записываем x и y во второй и третий столбец
 					int id = triangles[triangleID][s - 1] - 1;
 					this->m_matrix[i][j] = points[id][j - 1];
 				}
